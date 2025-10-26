@@ -1,0 +1,118 @@
+import { Course } from "@/types";
+
+export const coursesData: Course[] = [
+  {
+    id: "1",
+    title: "Full Stack Web Development",
+    description:
+      "Master modern web development with React, Node.js, and MongoDB. Learn to build complete web applications from scratch.",
+    price: 25000,
+    duration: "6 months",
+    image: "/images/courses/4by3/web-dev.jpg",
+    category: "Web Development",
+    featured: true,
+    syllabus: [
+      "HTML5, CSS3 & JavaScript",
+      "React.js & Next.js",
+      "Node.js & Express",
+      "MongoDB & Database Design",
+      "REST APIs & Authentication",
+      "Deployment & DevOps",
+    ],
+  },
+  {
+    id: "2",
+    title: "Data Science with Python",
+    description:
+      "Learn data analysis, machine learning, and AI with Python. Become a skilled data scientist.",
+    price: 30000,
+    duration: "8 months",
+    image: "/images/courses/4by3/data-science.jpg",
+    category: "Data Science",
+    featured: true,
+    syllabus: [
+      "Python Programming",
+      "NumPy & Pandas",
+      "Data Visualization",
+      "Machine Learning",
+      "Deep Learning",
+      "Real-world Projects",
+    ],
+  },
+  {
+    id: "3",
+    title: "Digital Marketing Masterclass",
+    description:
+      "Complete digital marketing course covering SEO, social media, content marketing, and paid advertising.",
+    price: 18000,
+    duration: "4 months",
+    image: "/images/courses/4by3/digital-marketing.jpg",
+    category: "Marketing",
+    featured: true,
+    syllabus: [
+      "SEO & Content Marketing",
+      "Social Media Marketing",
+      "Google Ads & PPC",
+      "Email Marketing",
+      "Analytics & Reporting",
+      "Marketing Strategy",
+    ],
+  },
+  {
+    id: "4",
+    title: "UI/UX Design Professional",
+    description:
+      "Learn user interface and user experience design. Master Figma, Adobe XD, and design thinking.",
+    price: 22000,
+    duration: "5 months",
+    image: "/images/courses/4by3/ui-ux.jpg",
+    category: "Design",
+    featured: false,
+    syllabus: [
+      "Design Fundamentals",
+      "User Research",
+      "Wireframing & Prototyping",
+      "Figma & Adobe XD",
+      "Interaction Design",
+      "Portfolio Building",
+    ],
+  },
+  {
+    id: "5",
+    title: "Mobile App Development",
+    description:
+      "Build native and cross-platform mobile apps using React Native and Flutter.",
+    price: 28000,
+    duration: "7 months",
+    image: "/images/courses/4by3/mobile-dev.jpg",
+    category: "Mobile Development",
+    featured: false,
+    syllabus: [
+      "Mobile Development Basics",
+      "React Native",
+      "Flutter & Dart",
+      "State Management",
+      "API Integration",
+      "App Deployment",
+    ],
+  },
+  {
+    id: "6",
+    title: "Cloud Computing & DevOps",
+    description:
+      "Master cloud platforms (AWS, Azure) and DevOps practices for modern software deployment.",
+    price: 32000,
+    duration: "6 months",
+    image: "/images/courses/4by3/cloud-devops.jpg",
+    category: "Cloud & DevOps",
+    featured: false,
+    syllabus: [
+      "Cloud Fundamentals",
+      "AWS/Azure Services",
+      "Docker & Kubernetes",
+      "CI/CD Pipelines",
+      "Infrastructure as Code",
+      "Monitoring & Security",
+    ],
+  },
+];
