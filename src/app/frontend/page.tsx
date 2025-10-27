@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import PublicLayout from "@/components/PublicLayout";
 import {
   Box,
@@ -14,6 +14,7 @@ import {
   Rating,
   TextField,
   Stack,
+  CircularProgress,
 } from "@mui/material";
 import {
   GraduationCap,
@@ -34,6 +35,11 @@ import { useAppStore } from "@/context/store";
 import { generateId } from "@/utils/helpers";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import {
+  fetchHeroSlides,
+  submitInquiry,
+  type HeroSlide,
+} from "@/utils/appsScript";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -65,7 +71,10 @@ const features = [
 ];
 
 export default function HomePage() {
-  const { addInquiry, heroSlides } = useAppStore();
+  const { addInquiry } = useAppStore();
+  const [googleSlides, setGoogleSlides] = useState<HeroSlide[]>([]);
+  const [isLoadingSlides, setIsLoadingSlides] = useState(true);
+
   const {
     register,
     handleSubmit,
@@ -75,29 +84,84 @@ export default function HomePage() {
     resolver: yupResolver(schema),
   });
 
-  const onSubmit = (data: {
+  // Fetch hero slides from Google Sheets ONLY (no fallback to local data)
+  useEffect(() => {
+    async function loadSlides() {
+      try {
+        setIsLoadingSlides(true);
+        console.log("🔄 Fetching hero slides from Google Sheets...");
+
+        const slides = await fetchHeroSlides();
+
+        if (slides && slides.length > 0) {
+          setGoogleSlides(slides);
+          console.log(`✅ Loaded ${slides.length} slides from Google Sheets`);
+        } else {
+          setGoogleSlides([]);
+          console.warn("⚠️ No slides found in Google Sheets");
+        }
+      } catch (error) {
+        console.error("❌ Error loading slides from Google Sheets:", error);
+        setGoogleSlides([]);
+      } finally {
+        setIsLoadingSlides(false);
+      }
+    }
+
+    loadSlides();
+  }, []);
+
+  const onSubmit = async (data: {
     name: string;
     email: string;
     phone: string;
     message: string;
   }) => {
-    const inquiry = {
-      id: generateId(),
-      ...data,
-      date: new Date().toISOString(),
-      status: "new" as const,
-    };
+    try {
+      console.log("📝 Submitting inquiry:", data);
 
-    addInquiry(inquiry);
-    toast.success("Thank you for your inquiry! We will contact you soon.");
-    reset();
+      // Try to submit to Google Sheets first
+      const result = await submitInquiry(data);
+
+      console.log("📊 Google Sheets result:", result);
+
+      if (result.success) {
+        toast.success("Thank you for your inquiry! We will contact you soon.");
+        reset();
+      } else {
+        console.warn("⚠️ Google Sheets failed, using fallback");
+        // Fallback to Zustand store
+        const inquiry = {
+          id: generateId(),
+          ...data,
+          date: new Date().toISOString(),
+          status: "new" as const,
+        };
+        addInquiry(inquiry);
+        toast.success("Thank you for your inquiry! We will contact you soon.");
+        reset();
+      }
+    } catch (err) {
+      console.error("❌ Error submitting inquiry:", err);
+      // Fallback to Zustand store on error
+      const inquiry = {
+        id: generateId(),
+        ...data,
+        date: new Date().toISOString(),
+        status: "new" as const,
+      };
+      addInquiry(inquiry);
+      toast.success("Thank you for your inquiry! We will contact you soon.");
+      reset();
+    }
   };
 
   const featuredCourses = coursesData
     .filter((course) => course.featured)
     .slice(0, 3);
 
-  const activeSlides = heroSlides
+  // Use ONLY Google Sheets data (no local fallback)
+  const activeSlides = googleSlides
     .filter((slide) => slide.isActive)
     .sort((a, b) => a.order - b.order);
 
@@ -105,154 +169,182 @@ export default function HomePage() {
     <PublicLayout>
       {/* Hero Slider Section */}
       <Box sx={{ position: "relative", overflow: "hidden", mt: -2 }}>
-        <Swiper
-          modules={[Navigation, Pagination, Autoplay]}
-          spaceBetween={0}
-          slidesPerView={1}
-          navigation
-          pagination={{ clickable: true }}
-          autoplay={{
-            delay: 5000,
-            disableOnInteraction: false,
-          }}
-          loop={true}
-          style={{ width: "100%", height: "100%" }}
-        >
-          {activeSlides.map((slide) => (
-            <SwiperSlide key={slide.id}>
-              <Box
-                sx={{
-                  background: "white",
-                  color: "black",
-                  py: { xs: 6, sm: 8, md: 10 },
-                  position: "relative",
-                  overflow: "hidden",
-                  minHeight: { xs: "auto", md: "550px" },
-                }}
-              >
-                <Container maxWidth="lg">
-                  <Stack
-                    direction={{ xs: "column", md: "row" }}
-                    spacing={{ xs: 3, md: 4 }}
-                    alignItems="center"
-                    justifyContent="space-between"
-                  >
-                    <Box sx={{ flex: 1, zIndex: 1, width: "100%" }}>
-                      <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6 }}
-                      >
-                        <Typography
-                          variant="overline"
-                          sx={{
-                            color: "#1976d2",
-                            fontWeight: 700,
-                            fontSize: { xs: "0.75rem", sm: "0.9rem" },
-                            letterSpacing: 2,
-                            mb: { xs: 1, sm: 1.5 },
-                            display: "block",
-                          }}
-                        >
-                          {slide.subtitle}
-                        </Typography>
-                        <Typography
-                          variant="h1"
-                          sx={{
-                            fontSize: {
-                              xs: "1.5rem",
-                              sm: "2rem",
-                              md: "2.75rem",
-                            },
-                            fontWeight: 800,
-                            mb: { xs: 1.5, sm: 2 },
-                            color: "black",
-                            lineHeight: 1.2,
-                          }}
-                        >
-                          {slide.title}
-                        </Typography>
-                        <Typography
-                          variant="h5"
-                          sx={{
-                            fontSize: { xs: "0.875rem", sm: "1.1rem" },
-                            mb: { xs: 2, sm: 3 },
-                            color: "text.secondary",
-                            lineHeight: 1.6,
-                          }}
-                        >
-                          {slide.description}
-                        </Typography>
-                        <Button
-                          variant="contained"
-                          size="large"
-                          sx={{
-                            background:
-                              "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)",
-                            color: "white",
-                            "&:hover": {
-                              background:
-                                "linear-gradient(135deg, #1565c0 0%, #1976d2 100%)",
-                              transform: "translateY(-2px)",
-                            },
-                            px: { xs: 3, sm: 4 },
-                            py: { xs: 1.25, sm: 1.5 },
-                            fontSize: { xs: "0.875rem", sm: "1rem" },
-                            fontWeight: 600,
-                            transition: "all 0.3s ease",
-                            boxShadow: "0 4px 12px rgba(25,118,210,0.3)",
-                          }}
-                          endIcon={<ArrowRight />}
-                          href={slide.buttonLink}
-                        >
-                          {slide.buttonText}
-                        </Button>
-                      </motion.div>
-                    </Box>
-
-                    <Box
-                      sx={{
-                        flex: 1,
-                        display: "flex",
-                        justifyContent: "center",
-                        width: "100%",
-                        backgroundColor: "transparent",
-                      }}
+        {isLoadingSlides ? (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              minHeight: "550px",
+              background: "white",
+            }}
+          >
+            <CircularProgress size={60} sx={{ color: "#667eea" }} />
+          </Box>
+        ) : activeSlides.length === 0 ? (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              minHeight: "550px",
+              background: "white",
+            }}
+          >
+            <Typography variant="h5" color="text.secondary">
+              No active slides available
+            </Typography>
+          </Box>
+        ) : (
+          <Swiper
+            modules={[Navigation, Pagination, Autoplay]}
+            spaceBetween={0}
+            slidesPerView={1}
+            navigation
+            pagination={{ clickable: true }}
+            autoplay={{
+              delay: 5000,
+              disableOnInteraction: false,
+            }}
+            loop={true}
+            style={{ width: "100%", height: "100%" }}
+          >
+            {activeSlides.map((slide) => (
+              <SwiperSlide key={slide.id}>
+                <Box
+                  sx={{
+                    background: "white",
+                    color: "black",
+                    py: { xs: 6, sm: 8, md: 10 },
+                    position: "relative",
+                    overflow: "hidden",
+                    minHeight: { xs: "auto", md: "550px" },
+                  }}
+                >
+                  <Container maxWidth="lg">
+                    <Stack
+                      direction={{ xs: "column", md: "row" }}
+                      spacing={{ xs: 3, md: 4 }}
+                      alignItems="center"
+                      justifyContent="space-between"
                     >
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                        style={{
+                      <Box sx={{ flex: 1, zIndex: 1, width: "100%" }}>
+                        <motion.div
+                          initial={{ opacity: 0, y: 30 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.6 }}
+                        >
+                          <Typography
+                            variant="overline"
+                            sx={{
+                              color: "#1976d2",
+                              fontWeight: 700,
+                              fontSize: { xs: "0.75rem", sm: "0.9rem" },
+                              letterSpacing: 2,
+                              mb: { xs: 1, sm: 1.5 },
+                              display: "block",
+                            }}
+                          >
+                            {slide.subtitle}
+                          </Typography>
+                          <Typography
+                            variant="h1"
+                            sx={{
+                              fontSize: {
+                                xs: "1.5rem",
+                                sm: "2rem",
+                                md: "2.75rem",
+                              },
+                              fontWeight: 800,
+                              mb: { xs: 1.5, sm: 2 },
+                              color: "black",
+                              lineHeight: 1.2,
+                            }}
+                          >
+                            {slide.title}
+                          </Typography>
+                          <Typography
+                            variant="h5"
+                            sx={{
+                              fontSize: { xs: "0.875rem", sm: "1.1rem" },
+                              mb: { xs: 2, sm: 3 },
+                              color: "text.secondary",
+                              lineHeight: 1.6,
+                            }}
+                          >
+                            {slide.description}
+                          </Typography>
+                          <Button
+                            variant="contained"
+                            size="large"
+                            sx={{
+                              background:
+                                "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)",
+                              color: "white",
+                              "&:hover": {
+                                background:
+                                  "linear-gradient(135deg, #1565c0 0%, #1976d2 100%)",
+                                transform: "translateY(-2px)",
+                              },
+                              px: { xs: 3, sm: 4 },
+                              py: { xs: 1.25, sm: 1.5 },
+                              fontSize: { xs: "0.875rem", sm: "1rem" },
+                              fontWeight: 600,
+                              transition: "all 0.3s ease",
+                              boxShadow: "0 4px 12px rgba(25,118,210,0.3)",
+                            }}
+                            endIcon={<ArrowRight />}
+                            href={slide.ctaLink}
+                          >
+                            {slide.ctaText}
+                          </Button>
+                        </motion.div>
+                      </Box>
+
+                      <Box
+                        sx={{
+                          flex: 1,
+                          display: "flex",
+                          justifyContent: "center",
                           width: "100%",
                           backgroundColor: "transparent",
                         }}
                       >
-                        <Box
-                          component="img"
-                          src={slide.image}
-                          alt={slide.title}
-                          sx={{
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.6, delay: 0.2 }}
+                          style={{
                             width: "100%",
-                            maxWidth: { xs: 400, sm: 500, md: 600 },
-                            height: "auto",
-                            boxShadow: "none",
-                            mx: "auto",
-                            display: "block",
                             backgroundColor: "transparent",
                           }}
-                          onError={(e) => {
-                            e.currentTarget.style.display = "none";
-                          }}
-                        />
-                      </motion.div>
-                    </Box>
-                  </Stack>
-                </Container>
-              </Box>
-            </SwiperSlide>
-          ))}
-        </Swiper>
+                        >
+                          <Box
+                            component="img"
+                            src={slide.image}
+                            alt={slide.title}
+                            sx={{
+                              width: "100%",
+                              maxWidth: { xs: 400, sm: 500, md: 600 },
+                              height: "auto",
+                              boxShadow: "none",
+                              mx: "auto",
+                              display: "block",
+                              backgroundColor: "transparent",
+                            }}
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                            }}
+                          />
+                        </motion.div>
+                      </Box>
+                    </Stack>
+                  </Container>
+                </Box>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        )}
       </Box>
 
       {/* Stats Section */}

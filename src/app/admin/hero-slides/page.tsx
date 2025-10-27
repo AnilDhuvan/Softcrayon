@@ -78,8 +78,8 @@ export default function HeroSlidesPage() {
       setValue("subtitle", slide.subtitle);
       setValue("description", slide.description);
       setValue("image", slide.image);
-      setValue("buttonText", slide.buttonText);
-      setValue("buttonLink", slide.buttonLink);
+      setValue("buttonText", slide.ctaText || slide.buttonText || "");
+      setValue("buttonLink", slide.ctaLink || slide.buttonLink || "");
       setValue("order", slide.order);
       setValue("isActive", slide.isActive);
     } else {
@@ -106,12 +106,18 @@ export default function HeroSlidesPage() {
     isActive: boolean;
   }) => {
     if (editingSlide) {
-      updateHeroSlide(editingSlide.id, data);
+      updateHeroSlide(editingSlide.id, {
+        ...data,
+        ctaText: data.buttonText,
+        ctaLink: data.buttonLink,
+      });
       toast.success("Hero slide updated successfully!");
     } else {
       const newSlide: HeroSlide = {
         id: generateId(),
         ...data,
+        ctaText: data.buttonText,
+        ctaLink: data.buttonLink,
       };
       addHeroSlide(newSlide);
       toast.success("Hero slide added successfully!");

@@ -18,8 +18,10 @@ export interface HeroSlide {
   subtitle: string;
   description: string;
   image: string;
-  buttonText: string;
-  buttonLink: string;
+  buttonText?: string; // Legacy field - kept for backward compatibility
+  buttonLink?: string; // Legacy field - kept for backward compatibility
+  ctaText: string; // New field - from Google Sheets
+  ctaLink: string; // New field - from Google Sheets
   order: number;
   isActive: boolean;
 }

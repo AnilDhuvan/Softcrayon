@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { Box } from "@mui/material";
@@ -14,33 +14,41 @@ interface PublicLayoutProps {
 }
 
 export default function PublicLayout({ children }: PublicLayoutProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 4000,
-          style: {
-            background: "#363636",
-            color: "#fff",
-          },
-          success: {
-            duration: 3000,
-            iconTheme: {
-              primary: "#4caf50",
-              secondary: "#fff",
-            },
-          },
-          error: {
+      {mounted && (
+        <Toaster
+          position="top-right"
+          toastOptions={{
             duration: 4000,
-            iconTheme: {
-              primary: "#f44336",
-              secondary: "#fff",
+            style: {
+              background: "#363636",
+              color: "#fff",
             },
-          },
-        }}
-      />
+            success: {
+              duration: 3000,
+              iconTheme: {
+                primary: "#4caf50",
+                secondary: "#fff",
+              },
+            },
+            error: {
+              duration: 4000,
+              iconTheme: {
+                primary: "#f44336",
+                secondary: "#fff",
+              },
+            },
+          }}
+        />
+      )}
       <Box
         sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
       >
